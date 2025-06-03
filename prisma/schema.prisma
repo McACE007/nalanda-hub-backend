@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  User
+  Moderator
+}
+
+model User {
+  id       BigInt   @id //prikey
+  email    String   @unique
+  password String
+  fullName String
+  role     UserRole
+}
+
+model Admin {
+  id       BigInt @id //prikey
+  email    String @unique
+  password String
+  fullName String
+}
+
+model Branch {
+  id       BigInt @id
+  name     String @unique
+  duration Int
+}
+
+model Semester {
+  id   BigInt @id
+  name String
+}
+
+model Subject {
+  id   BigInt @id
+  name String
+}
+
+model Unit {
+  id   BigInt @id
+  name String
+}
+
+model Content {
+  id           BigInt   @id
+  title        String
+  description  String
+  imageUrl     String
+  uploadedDate DateTime
+  updatedAt    DateTime
+  status       Boolean
+}
+
+enum FileType {
+  pdf
+  txt
+  docs
+}
+
+model File {
+  id   BigInt   @id
+  name String
+  url  String
+  size BigInt
+  type FileType
+}
+
+model RelatedVideos {
+  id               BigInt @id
+  videoTitle       String
+  videoDescription String
+  videoUrl         String
+}
+
+enum NotificationType {
+  NewContentUpdate
+  Approval
+  Rejected
+  RequestForContent
+}
+
+model Notification {
+  id          BigInt           @id
+  title       String
+  description String
+  type        NotificationType
+  contentUrl  String
+}
