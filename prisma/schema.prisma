@@ -14,55 +14,119 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  User
-  Moderator
-}
-
 model User {
-  id       BigInt   @id //prikey
-  email    String   @unique
-  password String
-  fullName String
-  role     UserRole
-}
-
-model Admin {
-  id       BigInt @id //prikey
+  id       BigInt @id @default(autoincrement())
   email    String @unique
   password String
   fullName String
+
+  contents Content[]
+
+  Branch   Branch @relation(fields: [branchId], references: [id])
+  branchId BigInt
+
+  notifications         Notification[]
+  uploadContentRequests UploadContentRequest[]
+  newContentRequests    NewContentRequest[]
+}
+
+model Moderator {
+  id       BigInt @id @default(autoincrement())
+  email    String @unique
+  password String
+  fullName String
+
+  Branch   Branch @relation(fields: [branchId], references: [id])
+  branchId BigInt
+
+  notifications         Notification[]
+  uploadContentRequests UploadContentRequest[]
+  newContentRequests    NewContentRequest[]
+}
+
+model Admin {
+  id       BigInt @id @default(autoincrement())
+  email    String @unique
+  password String
+  fullName String
+
+  notifications         Notification[]
+  uploadContentRequests UploadContentRequest[]
+  newContentRequests    NewContentRequest[]
 }
 
 model Branch {
-  id       BigInt @id
+  id       BigInt @id @default(autoincrement())
   name     String @unique
   duration Int
+
+  semesters             Semester[]
+  users                 User[]
+  moderators            Moderator[]
+  uploadContentRequests UploadContentRequest[]
+  newContentRequest     NewContentRequest[]
 }
 
 model Semester {
-  id   BigInt @id
+  id   BigInt @id @default(autoincrement())
   name String
+
+  subjects Subject[]
+
+  Branch   Branch? @relation(fields: [branchId], references: [id])
+  branchId BigInt?
+
+  uploadContentRequests UploadContentRequest[]
+  newContentRequest     NewContentRequest[]
 }
 
 model Subject {
-  id   BigInt @id
+  id   BigInt @id @default(autoincrement())
   name String
+
+  units Unit[]
+
+  Semester   Semester? @relation(fields: [semesterId], references: [id])
+  semesterId BigInt?
+
+  uploadContentRequests UploadContentRequest[]
+  newContentRequest     NewContentRequest[]
 }
 
 model Unit {
-  id   BigInt @id
+  id   BigInt @id @default(autoincrement())
   name String
+
+  contents Content[]
+
+  Subject   Subject? @relation(fields: [subjectId], references: [id])
+  subjectId BigInt?
+
+  uploadContentRequests UploadContentRequest[]
+  newContentRequest     NewContentRequest[]
 }
 
 model Content {
-  id           BigInt   @id
+  id           BigInt   @id @default(autoincrement())
   title        String
   description  String
   imageUrl     String
-  uploadedDate DateTime
-  updatedAt    DateTime
-  status       Boolean
+  uploadedDate DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  status       Boolean  @default(false)
+
+  fileId BigInt @unique
+  file   File   @relation(fields: [fileId], references: [id])
+
+  uploadedBy BigInt
+  uploader   User   @relation(fields: [uploadedBy], references: [id])
+
+  relatedVideos RelatedVideo[]
+
+  Unit   Unit   @relation(fields: [unitId], references: [id])
+  unitId BigInt
+
+  uploadContentRequests UploadContentRequest[]
 }
 
 enum FileType {
@@ -72,18 +136,24 @@ enum FileType {
 }
 
 model File {
-  id   BigInt   @id
+  id   BigInt   @id @default(autoincrement())
   name String
   url  String
   size BigInt
   type FileType
+
+  contentId BigInt?
+  content   Content? @relation()
 }
 
-model RelatedVideos {
-  id               BigInt @id
+model RelatedVideo {
+  id               BigInt @id @default(autoincrement())
   videoTitle       String
   videoDescription String
   videoUrl         String
+
+  Content   Content? @relation(fields: [contentId], references: [id])
+  contentId BigInt?
 }
 
 enum NotificationType {
@@ -94,9 +164,87 @@ enum NotificationType {
 }
 
 model Notification {
-  id          BigInt           @id
+  id          BigInt           @id @default(autoincrement())
   title       String
   description String
   type        NotificationType
   contentUrl  String
+
+  User   User?   @relation(fields: [userId], references: [id])
+  userId BigInt?
+
+  Moderator   Moderator? @relation(fields: [moderatorId], references: [id])
+  moderatorId BigInt?
+
+  Admin   Admin?  @relation(fields: [adminId], references: [id])
+  adminId BigInt?
+}
+
+enum UploadContentRequestStatus {
+  Approved
+  Rejected
+  Pending
+}
+
+model UploadContentRequest {
+  id     BigInt                     @id @default(autoincrement())
+  status UploadContentRequestStatus @default(Pending)
+
+  User   User   @relation(fields: [userId], references: [id])
+  userId BigInt
+
+  Branch   Branch @relation(fields: [branchId], references: [id])
+  branchId BigInt
+
+  Content   Content @relation(fields: [contentId], references: [id])
+  contentId BigInt
+
+  Semester   Semester @relation(fields: [semesterId], references: [id])
+  semesterId BigInt
+
+  Subject   Subject @relation(fields: [subjectId], references: [id])
+  subjectId BigInt
+
+  Unit   Unit   @relation(fields: [unitId], references: [id])
+  unitId BigInt
+
+  moderatorId BigInt
+  Moderator   Moderator @relation(fields: [moderatorId], references: [id])
+
+  Admin   Admin  @relation(fields: [adminId], references: [id])
+  adminId BigInt
+}
+
+enum NewContentRequestType {
+  NewContent
+  UpdateContent
+}
+
+model NewContentRequest {
+  id              BigInt                @id @default(autoincrement())
+  description     String
+  rejectionReason String?
+  newContentUrl   String?
+  requestType     NewContentRequestType
+
+  User   User   @relation(fields: [userId], references: [id])
+  userId BigInt
+
+  Moderator   Moderator @relation(fields: [moderatorId], references: [id])
+  moderatorId BigInt
+
+  Admin   Admin  @relation(fields: [adminId], references: [id])
+  adminId BigInt
+
+  Branch   Branch @relation(fields: [branchId], references: [id])
+  branchId BigInt
+
+  Semester   Semester @relation(fields: [semesterId], references: [id])
+  semesterId BigInt
+
+  Subject   Subject @relation(fields: [subjectId], references: [id])
+  subjectId BigInt
+
+  Unit   Unit   @relation(fields: [unitId], references: [id])
+  unitId BigInt
 }
