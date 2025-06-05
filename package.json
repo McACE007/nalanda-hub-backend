@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node ./build/main.js",
-    "dev": "pnpm nodemon ./src/main.ts",
+    "start": "node ./build/server.js",
+    "dev": "pnpm nodemon ./src/server.ts",
     "build": "pnpm tsc -b"
   },
   "repository": {

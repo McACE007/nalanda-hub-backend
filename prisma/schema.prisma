@@ -73,8 +73,8 @@ model Semester {
 
   subjects Subject[]
 
-  Branch   Branch? @relation(fields: [branchId], references: [id])
-  branchId BigInt?
+  Branch   Branch @relation(fields: [branchId], references: [id])
+  branchId BigInt
 
   uploadContentRequests UploadContentRequest[]
   newContentRequest     NewContentRequest[]
@@ -86,8 +86,8 @@ model Subject {
 
   units Unit[]
 
-  Semester   Semester? @relation(fields: [semesterId], references: [id])
-  semesterId BigInt?
+  Semester   Semester @relation(fields: [semesterId], references: [id])
+  semesterId BigInt
 
   uploadContentRequests UploadContentRequest[]
   newContentRequest     NewContentRequest[]
@@ -99,8 +99,8 @@ model Unit {
 
   contents Content[]
 
-  Subject   Subject? @relation(fields: [subjectId], references: [id])
-  subjectId BigInt?
+  Subject   Subject @relation(fields: [subjectId], references: [id])
+  subjectId BigInt
 
   uploadContentRequests UploadContentRequest[]
   newContentRequest     NewContentRequest[]
@@ -115,9 +115,6 @@ model Content {
   updatedAt    DateTime @updatedAt
   status       Boolean  @default(false)
 
-  fileId BigInt @unique
-  file   File   @relation(fields: [fileId], references: [id])
-
   uploadedBy BigInt
   uploader   User   @relation(fields: [uploadedBy], references: [id])
 
@@ -127,6 +124,9 @@ model Content {
   unitId BigInt
 
   uploadContentRequests UploadContentRequest[]
+
+  File   File?
+  fileId BigInt?
 }
 
 enum FileType {
@@ -142,8 +142,8 @@ model File {
   size BigInt
   type FileType
 
-  contentId BigInt?
-  content   Content? @relation()
+  contentId BigInt  @unique
+  content   Content @relation(fields: [contentId], references: [id])
 }
 
 model RelatedVideo {
@@ -152,8 +152,8 @@ model RelatedVideo {
   videoDescription String
   videoUrl         String
 
-  Content   Content? @relation(fields: [contentId], references: [id])
-  contentId BigInt?
+  Content   Content @relation(fields: [contentId], references: [id])
+  contentId BigInt
 }
 
 enum NotificationType {
