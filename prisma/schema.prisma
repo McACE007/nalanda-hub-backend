@@ -15,7 +15,7 @@ datasource db {
 }
 
 model User {
-  id       BigInt @id @default(autoincrement())
+  id       Int    @id @default(autoincrement())
   email    String @unique
   password String
   fullName String
@@ -23,7 +23,7 @@ model User {
   contents Content[]
 
   Branch   Branch @relation(fields: [branchId], references: [id])
-  branchId BigInt
+  branchId Int
 
   notifications         Notification[]
   uploadContentRequests UploadContentRequest[]
@@ -31,13 +31,13 @@ model User {
 }
 
 model Moderator {
-  id       BigInt @id @default(autoincrement())
+  id       Int    @id @default(autoincrement())
   email    String @unique
   password String
   fullName String
 
   Branch   Branch @relation(fields: [branchId], references: [id])
-  branchId BigInt
+  branchId Int
 
   notifications         Notification[]
   uploadContentRequests UploadContentRequest[]
@@ -45,7 +45,7 @@ model Moderator {
 }
 
 model Admin {
-  id       BigInt @id @default(autoincrement())
+  id       Int    @id @default(autoincrement())
   email    String @unique
   password String
   fullName String
@@ -56,7 +56,7 @@ model Admin {
 }
 
 model Branch {
-  id       BigInt @id @default(autoincrement())
+  id       Int    @id @default(autoincrement())
   name     String @unique
   duration Int
 
@@ -68,46 +68,46 @@ model Branch {
 }
 
 model Semester {
-  id   BigInt @id @default(autoincrement())
+  id   Int    @id @default(autoincrement())
   name String
 
   subjects Subject[]
 
   Branch   Branch @relation(fields: [branchId], references: [id])
-  branchId BigInt
+  branchId Int
 
   uploadContentRequests UploadContentRequest[]
   newContentRequest     NewContentRequest[]
 }
 
 model Subject {
-  id   BigInt @id @default(autoincrement())
+  id   Int    @id @default(autoincrement())
   name String
 
   units Unit[]
 
   Semester   Semester @relation(fields: [semesterId], references: [id])
-  semesterId BigInt
+  semesterId Int
 
   uploadContentRequests UploadContentRequest[]
   newContentRequest     NewContentRequest[]
 }
 
 model Unit {
-  id   BigInt @id @default(autoincrement())
+  id   Int    @id @default(autoincrement())
   name String
 
   contents Content[]
 
   Subject   Subject @relation(fields: [subjectId], references: [id])
-  subjectId BigInt
+  subjectId Int
 
   uploadContentRequests UploadContentRequest[]
   newContentRequest     NewContentRequest[]
 }
 
 model Content {
-  id           BigInt   @id @default(autoincrement())
+  id           Int      @id @default(autoincrement())
   title        String
   description  String
   imageUrl     String
@@ -115,18 +115,18 @@ model Content {
   updatedAt    DateTime @updatedAt
   status       Boolean  @default(false)
 
-  uploadedBy BigInt
-  uploader   User   @relation(fields: [uploadedBy], references: [id])
+  uploadedBy Int
+  uploader   User @relation(fields: [uploadedBy], references: [id])
 
   relatedVideos RelatedVideo[]
 
-  Unit   Unit   @relation(fields: [unitId], references: [id])
-  unitId BigInt
+  Unit   Unit @relation(fields: [unitId], references: [id])
+  unitId Int
 
   uploadContentRequests UploadContentRequest[]
 
   File   File?
-  fileId BigInt?
+  fileId Int?
 }
 
 enum FileType {
@@ -136,24 +136,24 @@ enum FileType {
 }
 
 model File {
-  id   BigInt   @id @default(autoincrement())
+  id   Int      @id @default(autoincrement())
   name String
   url  String
-  size BigInt
+  size Int
   type FileType
 
-  contentId BigInt  @unique
+  contentId Int     @unique
   content   Content @relation(fields: [contentId], references: [id])
 }
 
 model RelatedVideo {
-  id               BigInt @id @default(autoincrement())
+  id               Int    @id @default(autoincrement())
   videoTitle       String
   videoDescription String
   videoUrl         String
 
   Content   Content @relation(fields: [contentId], references: [id])
-  contentId BigInt
+  contentId Int
 }
 
 enum NotificationType {
@@ -164,20 +164,20 @@ enum NotificationType {
 }
 
 model Notification {
-  id          BigInt           @id @default(autoincrement())
+  id          Int              @id @default(autoincrement())
   title       String
   description String
   type        NotificationType
   contentUrl  String
 
-  User   User?   @relation(fields: [userId], references: [id])
-  userId BigInt?
+  User   User? @relation(fields: [userId], references: [id])
+  userId Int?
 
   Moderator   Moderator? @relation(fields: [moderatorId], references: [id])
-  moderatorId BigInt?
+  moderatorId Int?
 
-  Admin   Admin?  @relation(fields: [adminId], references: [id])
-  adminId BigInt?
+  Admin   Admin? @relation(fields: [adminId], references: [id])
+  adminId Int?
 }
 
 enum UploadContentRequestStatus {
@@ -187,32 +187,32 @@ enum UploadContentRequestStatus {
 }
 
 model UploadContentRequest {
-  id     BigInt                     @id @default(autoincrement())
+  id     Int                        @id @default(autoincrement())
   status UploadContentRequestStatus @default(Pending)
 
-  User   User   @relation(fields: [userId], references: [id])
-  userId BigInt
+  User   User @relation(fields: [userId], references: [id])
+  userId Int
 
   Branch   Branch @relation(fields: [branchId], references: [id])
-  branchId BigInt
+  branchId Int
 
   Content   Content @relation(fields: [contentId], references: [id])
-  contentId BigInt
+  contentId Int
 
   Semester   Semester @relation(fields: [semesterId], references: [id])
-  semesterId BigInt
+  semesterId Int
 
   Subject   Subject @relation(fields: [subjectId], references: [id])
-  subjectId BigInt
+  subjectId Int
 
-  Unit   Unit   @relation(fields: [unitId], references: [id])
-  unitId BigInt
+  Unit   Unit @relation(fields: [unitId], references: [id])
+  unitId Int
 
-  moderatorId BigInt
+  moderatorId Int
   Moderator   Moderator @relation(fields: [moderatorId], references: [id])
 
-  Admin   Admin  @relation(fields: [adminId], references: [id])
-  adminId BigInt
+  Admin   Admin @relation(fields: [adminId], references: [id])
+  adminId Int
 }
 
 enum NewContentRequestType {
@@ -221,30 +221,30 @@ enum NewContentRequestType {
 }
 
 model NewContentRequest {
-  id              BigInt                @id @default(autoincrement())
+  id              Int                   @id @default(autoincrement())
   description     String
   rejectionReason String?
   newContentUrl   String?
   requestType     NewContentRequestType
 
-  User   User   @relation(fields: [userId], references: [id])
-  userId BigInt
+  User   User @relation(fields: [userId], references: [id])
+  userId Int
 
   Moderator   Moderator @relation(fields: [moderatorId], references: [id])
-  moderatorId BigInt
+  moderatorId Int
 
-  Admin   Admin  @relation(fields: [adminId], references: [id])
-  adminId BigInt
+  Admin   Admin @relation(fields: [adminId], references: [id])
+  adminId Int
 
   Branch   Branch @relation(fields: [branchId], references: [id])
-  branchId BigInt
+  branchId Int
 
   Semester   Semester @relation(fields: [semesterId], references: [id])
-  semesterId BigInt
+  semesterId Int
 
   Subject   Subject @relation(fields: [subjectId], references: [id])
-  subjectId BigInt
+  subjectId Int
 
-  Unit   Unit   @relation(fields: [unitId], references: [id])
-  unitId BigInt
+  Unit   Unit @relation(fields: [unitId], references: [id])
+  unitId Int
 }
