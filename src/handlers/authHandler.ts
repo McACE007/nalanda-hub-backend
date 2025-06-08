@@ -8,98 +8,108 @@ import bcrypt from "bcrypt";
 const MOD_PREFIX = "mod_";
 
 export async function handleLogin(req: Request, res: Response) {
-  const parsedRequest = LoginRequest.safeParse(req.body);
+  try {
+    const parsedRequest = LoginRequest.safeParse(req.body);
 
-  if (!parsedRequest.success) {
-    res.status(411).send({ message: "Invalid input given" });
-    return;
+    if (!parsedRequest.success) {
+      res.status(411).send({ message: "Invalid input given" });
+      return;
+    }
+
+    let token;
+
+    if (parsedRequest.data.email.startsWith(MOD_PREFIX)) {
+      const mod = await prisma.moderator.findUnique({
+        where: {
+          email: parsedRequest.data.email.substring(MOD_PREFIX.length),
+        },
+      });
+
+      if (!mod) {
+        res.send({ message: "Invalid credentials" });
+        return;
+      }
+
+      const isPasswordCorrect = await bcrypt.compare(
+        parsedRequest.data.password,
+        mod.password
+      );
+      if (!isPasswordCorrect) {
+        res.send({ message: "Invalid credentials" });
+        return;
+      }
+
+      token = jwt.sign({ userId: mod.id }, JWT_SECRET);
+    } else {
+      const user = await prisma.user.findUnique({
+        where: {
+          email: parsedRequest.data.email,
+        },
+      });
+
+      if (!user) {
+        res.send({ message: "Invalid credentials" });
+        return;
+      }
+
+      const isPasswordCorrect = await bcrypt.compare(
+        parsedRequest.data.password,
+        user.password
+      );
+      if (!isPasswordCorrect) {
+        res.send({ message: "Invalid credentials" });
+        return;
+      }
+
+      token = jwt.sign({ userId: user.id }, JWT_SECRET);
+    }
+
+    res.send({ message: "Login successful", token });
+  } catch (e) {
+    console.log(e);
+    res.send({ message: "Something went wrong!" });
   }
+}
 
-  let token;
+export async function handleRegister(req: Request, res: Response) {
+  try {
+    const parsedRequest = RegisterRequest.safeParse(req.body);
 
-  if (parsedRequest.data.email.startsWith(MOD_PREFIX)) {
-    const mod = await prisma.moderator.findUnique({
-      where: {
-        email: parsedRequest.data.email.substring(MOD_PREFIX.length),
-      },
-    });
-
-    if (!mod) {
-      res.send({ message: "Invalid credentials" });
+    if (!parsedRequest.success) {
+      res.status(411).send({ message: "Invalid input given" });
       return;
     }
 
-    const isPasswordCorrect = await bcrypt.compare(
-      parsedRequest.data.password,
-      mod.password
-    );
-    if (!isPasswordCorrect) {
-      res.send({ message: "Invalid credentials" });
+    if (parsedRequest.data.password !== parsedRequest.data.confirmPassword) {
+      res.send({ message: "Mismatch password" });
       return;
     }
 
-    token = jwt.sign({ userId: mod.id }, JWT_SECRET);
-  } else {
-    const user = await prisma.user.findUnique({
+    const existingUser = await prisma.user.findUnique({
       where: {
         email: parsedRequest.data.email,
       },
     });
 
-    if (!user) {
-      res.send({ message: "Invalid credentials" });
+    if (existingUser) {
+      res.send({ message: "Email is already used, Please try different one." });
       return;
     }
 
-    const isPasswordCorrect = await bcrypt.compare(
-      parsedRequest.data.password,
-      user.password
-    );
-    if (!isPasswordCorrect) {
-      res.send({ message: "Invalid credentials" });
-      return;
-    }
+    const hashedPassword = await bcrypt.hash(parsedRequest.data.password, 10);
 
-    token = jwt.sign({ userId: user.id }, JWT_SECRET);
+    const user = await prisma.user.create({
+      data: {
+        email: parsedRequest.data.email,
+        fullName: parsedRequest.data.fullName,
+        password: hashedPassword,
+        branchId: 1,
+      },
+    });
+
+    res.send({ message: "Registered sucessfully" });
+  } catch (e) {
+    console.log(e);
+    res.send({ message: "Something went wrong!" });
   }
-
-  res.send({ message: "Login successful", token });
-}
-
-export async function handleRegister(req: Request, res: Response) {
-  const parsedRequest = RegisterRequest.safeParse(req.body);
-
-  if (!parsedRequest.success) {
-    res.status(411).send({ message: "Invalid input given" });
-    return;
-  }
-
-  if (parsedRequest.data.password !== parsedRequest.data.confirmPassword) {
-    res.send({ message: "Mismatch password" });
-    return;
-  }
-
-  const existingUser = await prisma.user.findUnique({
-    where: {
-      email: parsedRequest.data.email,
-    },
-  });
-
-  if (existingUser) {
-    res.send({ message: "Email is already used, Please try different one." });
-    return;
-  }
-
-  const hashedPassword = await bcrypt.hash(parsedRequest.data.password, 10);
-
-  const user = await prisma.user.create({
-    data: {
-      email: parsedRequest.data.email,
-      fullName: parsedRequest.data.fullName,
-      password: hashedPassword,
-      branchId: 1,
-    },
-  });
-
-  res.send({ message: "Registered sucessfully" });
 }
