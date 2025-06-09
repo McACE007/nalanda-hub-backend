@@ -103,7 +103,7 @@ export async function handleRegister(req: Request, res: Response) {
         email: parsedRequest.data.email,
         fullName: parsedRequest.data.fullName,
         password: hashedPassword,
-        branchId: 1,
+        branchId: parsedRequest.data.branchId,
       },
     });
 
