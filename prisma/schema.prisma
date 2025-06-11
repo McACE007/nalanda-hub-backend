@@ -14,46 +14,57 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum USER_ROLE {
+  USER
+  MOD
+  ADMIN
+}
+
 model User {
-  id       Int    @id @default(autoincrement())
-  email    String @unique
+  id       Int       @id @default(autoincrement())
+  email    String    @unique
   password String
   fullName String
+  role     USER_ROLE @default(USER)
 
   contents Content[]
 
   Branch   Branch @relation(fields: [branchId], references: [id])
   branchId Int
 
-  notifications         Notification[]
-  uploadContentRequests UploadContentRequest[]
-  newContentRequests    NewContentRequest[]
+  notifications             Notification[]
+  newContentRequests        NewContentRequest[]    @relation("Requester")
+  newContentRequestsMod     NewContentRequest[]    @relation("Moderator")
+  newContentRequestsAdmin   NewContentRequest[]    @relation("Admin")
+  UploadContentRequest      UploadContentRequest[] @relation("Uploader")
+  UploadContentRequestMod   UploadContentRequest[] @relation("Moderator")
+  UploadContentRequestAdmin UploadContentRequest[] @relation("Admin")
 }
 
-model Moderator {
-  id       Int    @id @default(autoincrement())
-  email    String @unique
-  password String
-  fullName String
+// model Moderator {
+//   id       Int    @id @default(autoincrement())
+//   email    String @unique
+//   password String
+//   fullName String
 
-  Branch   Branch @relation(fields: [branchId], references: [id])
-  branchId Int
+//   Branch   Branch @relation(fields: [branchId], references: [id])
+//   branchId Int
 
-  notifications         Notification[]
-  uploadContentRequests UploadContentRequest[]
-  newContentRequests    NewContentRequest[]
-}
+//   notifications         Notification[]
+//   uploadContentRequests UploadContentRequest[]
+//   newContentRequests    NewContentRequest[]
+// }
 
-model Admin {
-  id       Int    @id @default(autoincrement())
-  email    String @unique
-  password String
-  fullName String
+// model Admin {
+//   id       Int    @id @default(autoincrement())
+//   email    String @unique
+//   password String
+//   fullName String
 
-  notifications         Notification[]
-  uploadContentRequests UploadContentRequest[]
-  newContentRequests    NewContentRequest[]
-}
+//   notifications         Notification[]
+//   uploadContentRequests UploadContentRequest[]
+//   newContentRequests    NewContentRequest[]
+// }
 
 model Branch {
   id       Int    @id @default(autoincrement())
@@ -62,7 +73,6 @@ model Branch {
 
   semesters             Semester[]
   users                 User[]
-  moderators            Moderator[]
   uploadContentRequests UploadContentRequest[]
   newContentRequest     NewContentRequest[]
 }
@@ -170,14 +180,8 @@ model Notification {
   type        NotificationType
   contentUrl  String
 
-  User   User? @relation(fields: [userId], references: [id])
-  userId Int?
-
-  Moderator   Moderator? @relation(fields: [moderatorId], references: [id])
-  moderatorId Int?
-
-  Admin   Admin? @relation(fields: [adminId], references: [id])
-  adminId Int?
+  User   User @relation(fields: [userId], references: [id])
+  userId Int
 }
 
 enum UploadContentRequestStatus {
@@ -190,8 +194,8 @@ model UploadContentRequest {
   id     Int                        @id @default(autoincrement())
   status UploadContentRequestStatus @default(Pending)
 
-  User   User @relation(fields: [userId], references: [id])
-  userId Int
+  User       User @relation(name: "Uploader", fields: [uploaderId], references: [id])
+  uploaderId Int
 
   Branch   Branch @relation(fields: [branchId], references: [id])
   branchId Int
@@ -208,11 +212,11 @@ model UploadContentRequest {
   Unit   Unit @relation(fields: [unitId], references: [id])
   unitId Int
 
-  moderatorId Int
-  Moderator   Moderator @relation(fields: [moderatorId], references: [id])
+  moderatorId Int?
+  Moderator   User? @relation(name: "Moderator", fields: [moderatorId], references: [id])
 
-  Admin   Admin @relation(fields: [adminId], references: [id])
-  adminId Int
+  Admin   User? @relation(name: "Admin", fields: [adminId], references: [id])
+  adminId Int?
 }
 
 enum NewContentRequestType {
@@ -227,14 +231,14 @@ model NewContentRequest {
   newContentUrl   String?
   requestType     NewContentRequestType
 
-  User   User @relation(fields: [userId], references: [id])
-  userId Int
+  User        User @relation(name: "Requester", fields: [requesterId], references: [id])
+  requesterId Int
 
-  Moderator   Moderator @relation(fields: [moderatorId], references: [id])
-  moderatorId Int
+  Moderator   User? @relation(name: "Moderator", fields: [moderatorId], references: [id])
+  moderatorId Int?
 
-  Admin   Admin @relation(fields: [adminId], references: [id])
-  adminId Int
+  Admin   User? @relation(name: "Admin", fields: [adminId], references: [id])
+  adminId Int?
 
   Branch   Branch @relation(fields: [branchId], references: [id])
   branchId Int
