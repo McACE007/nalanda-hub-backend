@@ -12,6 +12,6 @@ export async function modMiddleware(
   if (req.userRole === USER_ROLE.MOD) {
     next();
   } else {
-    res.send("Not Authorized");
+    res.send("Not Authorized, you have to be a mod");
   }
 }

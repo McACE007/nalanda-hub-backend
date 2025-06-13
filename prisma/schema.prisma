@@ -41,31 +41,6 @@ model User {
   UploadContentRequestAdmin UploadContentRequest[] @relation("Admin")
 }
 
-// model Moderator {
-//   id       Int    @id @default(autoincrement())
-//   email    String @unique
-//   password String
-//   fullName String
-
-//   Branch   Branch @relation(fields: [branchId], references: [id])
-//   branchId Int
-
-//   notifications         Notification[]
-//   uploadContentRequests UploadContentRequest[]
-//   newContentRequests    NewContentRequest[]
-// }
-
-// model Admin {
-//   id       Int    @id @default(autoincrement())
-//   email    String @unique
-//   password String
-//   fullName String
-
-//   notifications         Notification[]
-//   uploadContentRequests UploadContentRequest[]
-//   newContentRequests    NewContentRequest[]
-// }
-
 model Branch {
   id       Int    @id @default(autoincrement())
   name     String @unique
@@ -75,6 +50,7 @@ model Branch {
   users                 User[]
   uploadContentRequests UploadContentRequest[]
   newContentRequest     NewContentRequest[]
+  contents              Content[]
 }
 
 model Semester {
@@ -88,6 +64,7 @@ model Semester {
 
   uploadContentRequests UploadContentRequest[]
   newContentRequest     NewContentRequest[]
+  contents              Content[]
 }
 
 model Subject {
@@ -101,6 +78,7 @@ model Subject {
 
   uploadContentRequests UploadContentRequest[]
   newContentRequest     NewContentRequest[]
+  contents              Content[]
 }
 
 model Unit {
@@ -117,26 +95,36 @@ model Unit {
 }
 
 model Content {
-  id           Int      @id @default(autoincrement())
-  title        String
-  description  String
-  imageUrl     String
+  id          Int     @id @default(autoincrement())
+  title       String
+  description String
+  imageUrl    String
+  status      Boolean @default(false)
+
   uploadedDate DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  status       Boolean  @default(false)
 
   uploadedBy Int
   uploader   User @relation(fields: [uploadedBy], references: [id])
 
   relatedVideos RelatedVideo[]
 
+  Branch   Branch @relation(fields: [branchId], references: [id])
+  branchId Int
+
+  Semester   Semester @relation(fields: [semesterId], references: [id])
+  semesterId Int
+
+  Subject   Subject @relation(fields: [subjectId], references: [id])
+  subjectId Int
+
   Unit   Unit @relation(fields: [unitId], references: [id])
   unitId Int
 
-  uploadContentRequests UploadContentRequest[]
-
   File   File?
   fileId Int?
+
+  UploadContentRequest UploadContentRequest?
 }
 
 enum FileType {
@@ -197,11 +185,11 @@ model UploadContentRequest {
   User       User @relation(name: "Uploader", fields: [uploaderId], references: [id])
   uploaderId Int
 
+  Content   Content @relation(fields: [contentId], references: [id])
+  contentId Int     @unique
+
   Branch   Branch @relation(fields: [branchId], references: [id])
   branchId Int
-
-  Content   Content @relation(fields: [contentId], references: [id])
-  contentId Int
 
   Semester   Semester @relation(fields: [semesterId], references: [id])
   semesterId Int
@@ -226,7 +214,8 @@ enum NewContentRequestType {
 
 model NewContentRequest {
   id              Int                   @id @default(autoincrement())
-  description     String
+  title           String
+  description     String?
   rejectionReason String?
   newContentUrl   String?
   requestType     NewContentRequestType
