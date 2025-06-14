@@ -1,4 +1,5 @@
 import z from "zod";
+import { RequestType } from "../generated/prisma";
 
 export const LoginRequest = z.object({
   email: z.string().email(),
@@ -13,20 +14,13 @@ export const RegisterRequest = z.object({
   branchId: z.number(),
 });
 
-export const UploadContentRequest = z.object({
+export const CreateRequest = z.object({
   title: z.string().min(10).max(100),
   description: z.string().min(30).max(255),
-  branchId: z.number(),
-  semesterId: z.number(),
-  subjectId: z.number(),
-  unitId: z.number(),
-  relatedVideos: z.array(z.string()),
-});
-
-export const NewContentRequest = z.object({
-  title: z.string().min(10).max(100),
-  description: z.string().min(30).max(255),
-  requestType: z.enum(["NewContent", "UpdateContent"]),
+  requestType: z.enum([...Object.values(RequestType)] as [
+    RequestType,
+    ...RequestType[]
+  ]),
   branchId: z.number(),
   semesterId: z.number(),
   subjectId: z.number(),

@@ -32,13 +32,9 @@ model User {
   Branch   Branch @relation(fields: [branchId], references: [id])
   branchId Int
 
-  notifications             Notification[]
-  newContentRequests        NewContentRequest[]    @relation("Requester")
-  newContentRequestsMod     NewContentRequest[]    @relation("Moderator")
-  newContentRequestsAdmin   NewContentRequest[]    @relation("Admin")
-  UploadContentRequest      UploadContentRequest[] @relation("Uploader")
-  UploadContentRequestMod   UploadContentRequest[] @relation("Moderator")
-  UploadContentRequestAdmin UploadContentRequest[] @relation("Admin")
+  notifications    Notification[]
+  myRequests       Request[]      @relation("myRequests_user")
+  assignedRequests Request[]      @relation("assignedRequests_mod")
 }
 
 model Branch {
@@ -46,11 +42,10 @@ model Branch {
   name     String @unique
   duration Int
 
-  semesters             Semester[]
-  users                 User[]
-  uploadContentRequests UploadContentRequest[]
-  newContentRequest     NewContentRequest[]
-  contents              Content[]
+  semesters Semester[]
+  users     User[]
+  contents  Content[]
+  Request   Request[]
 }
 
 model Semester {
@@ -59,12 +54,10 @@ model Semester {
 
   subjects Subject[]
 
-  Branch   Branch @relation(fields: [branchId], references: [id])
+  Branch   Branch    @relation(fields: [branchId], references: [id])
   branchId Int
-
-  uploadContentRequests UploadContentRequest[]
-  newContentRequest     NewContentRequest[]
-  contents              Content[]
+  contents Content[]
+  Request  Request[]
 }
 
 model Subject {
@@ -73,12 +66,10 @@ model Subject {
 
   units Unit[]
 
-  Semester   Semester @relation(fields: [semesterId], references: [id])
+  Semester   Semester  @relation(fields: [semesterId], references: [id])
   semesterId Int
-
-  uploadContentRequests UploadContentRequest[]
-  newContentRequest     NewContentRequest[]
-  contents              Content[]
+  contents   Content[]
+  Request    Request[]
 }
 
 model Unit {
@@ -87,11 +78,9 @@ model Unit {
 
   contents Content[]
 
-  Subject   Subject @relation(fields: [subjectId], references: [id])
+  Subject   Subject   @relation(fields: [subjectId], references: [id])
   subjectId Int
-
-  uploadContentRequests UploadContentRequest[]
-  newContentRequest     NewContentRequest[]
+  Request   Request[]
 }
 
 model Content {
@@ -124,7 +113,7 @@ model Content {
   File   File?
   fileId Int?
 
-  UploadContentRequest UploadContentRequest?
+  Request Request?
 }
 
 enum FileType {
@@ -172,62 +161,35 @@ model Notification {
   userId Int
 }
 
-enum UploadContentRequestStatus {
+enum RequestStatus {
   Approved
   Rejected
   Pending
 }
 
-model UploadContentRequest {
-  id     Int                        @id @default(autoincrement())
-  status UploadContentRequestStatus @default(Pending)
-
-  User       User @relation(name: "Uploader", fields: [uploaderId], references: [id])
-  uploaderId Int
-
-  Content   Content @relation(fields: [contentId], references: [id])
-  contentId Int     @unique
-
-  Branch   Branch @relation(fields: [branchId], references: [id])
-  branchId Int
-
-  Semester   Semester @relation(fields: [semesterId], references: [id])
-  semesterId Int
-
-  Subject   Subject @relation(fields: [subjectId], references: [id])
-  subjectId Int
-
-  Unit   Unit @relation(fields: [unitId], references: [id])
-  unitId Int
-
-  moderatorId Int?
-  Moderator   User? @relation(name: "Moderator", fields: [moderatorId], references: [id])
-
-  Admin   User? @relation(name: "Admin", fields: [adminId], references: [id])
-  adminId Int?
-}
-
-enum NewContentRequestType {
+enum RequestType {
   NewContent
   UpdateContent
+  UploadContent
 }
 
-model NewContentRequest {
-  id              Int                   @id @default(autoincrement())
+model Request {
+  id              Int           @id @default(autoincrement())
   title           String
   description     String?
   rejectionReason String?
   newContentUrl   String?
-  requestType     NewContentRequestType
+  requestType     RequestType
+  status          RequestStatus @default(Pending)
 
-  User        User @relation(name: "Requester", fields: [requesterId], references: [id])
+  User        User @relation(name: "myRequests_user", fields: [requesterId], references: [id])
   requesterId Int
 
-  Moderator   User? @relation(name: "Moderator", fields: [moderatorId], references: [id])
-  moderatorId Int?
+  Moderator   User @relation(name: "assignedRequests_mod", fields: [moderatorId], references: [id])
+  moderatorId Int
 
-  Admin   User? @relation(name: "Admin", fields: [adminId], references: [id])
-  adminId Int?
+  contentId Int?     @unique
+  Content   Content? @relation(fields: [contentId], references: [id])
 
   Branch   Branch @relation(fields: [branchId], references: [id])
   branchId Int

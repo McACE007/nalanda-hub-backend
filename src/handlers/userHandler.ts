@@ -1,16 +1,77 @@
 import { Request, Response } from "express";
-import { NewContentRequest, UploadContentRequest } from "../types";
+import { CreateRequest } from "../types";
 import { prisma } from "../db";
+import { RequestType } from "../generated/prisma";
 
-export async function handleUploadContentRequest(req: Request, res: Response) {
+export async function handleCreateRequest(req: Request, res: Response) {
   try {
-    console.log(req.body);
-    const parsedRequest = UploadContentRequest.safeParse(req.body);
+    const parsedRequest = CreateRequest.safeParse(req.body);
 
     if (!parsedRequest.success) {
       res.send({ message: "Invalid format" });
       console.log(parsedRequest.error);
       return;
+    }
+
+    let request;
+
+    switch (parsedRequest.data.requestType) {
+      case RequestType.NewContent: {
+        request = await prisma.request.create({
+          data: {
+            title: parsedRequest.data.title,
+            description: parsedRequest.data.description,
+            requestType: parsedRequest.data.requestType,
+            branchId: parsedRequest.data.branchId,
+            semesterId: parsedRequest.data.semesterId,
+            subjectId: parsedRequest.data.subjectId,
+            unitId: parsedRequest.data.unitId,
+            // @ts-ignore
+            requesterId: req.userId,
+            moderatorId: 1,
+          },
+        });
+        break;
+      }
+      case RequestType.UpdateContent: {
+        request = await prisma.request.create({
+          data: {
+            title: parsedRequest.data.title,
+            description: parsedRequest.data.description,
+            requestType: parsedRequest.data.requestType,
+            branchId: parsedRequest.data.branchId,
+            semesterId: parsedRequest.data.semesterId,
+            subjectId: parsedRequest.data.subjectId,
+            unitId: parsedRequest.data.unitId,
+            // @ts-ignore
+            requesterId: req.userId,
+            moderatorId: 1,
+          },
+        });
+        break;
+      }
+
+      case RequestType.UploadContent: {
+        const content = await prisma.content.create({});
+
+        request = await prisma.request.create({
+          data: {
+            title: parsedRequest.data.title,
+            description: parsedRequest.data.description,
+            requestType: parsedRequest.data.requestType,
+            branchId: parsedRequest.data.branchId,
+            semesterId: parsedRequest.data.semesterId,
+            subjectId: parsedRequest.data.subjectId,
+            unitId: parsedRequest.data.unitId,
+            // @ts-ignore
+            requesterId: req.userId,
+            moderatorId: 1,
+          },
+        });
+        break;
+      }
+      default:
+        break;
     }
 
     const content = await prisma.content.create({
@@ -29,37 +90,6 @@ export async function handleUploadContentRequest(req: Request, res: Response) {
     });
 
     res.send({ content });
-  } catch (e) {
-    console.log(e);
-    res.status(500).send({ message: "Something went wrong!" });
-  }
-}
-
-export async function handleNewContentRequest(req: Request, res: Response) {
-  try {
-    const parsedRequest = NewContentRequest.safeParse(req.body);
-
-    if (!parsedRequest.success) {
-      res.send({ message: "Invalid format" });
-      console.log(parsedRequest.error);
-      return;
-    }
-
-    const newContentRequest = await prisma.newContentRequest.create({
-      data: {
-        title: parsedRequest.data.title,
-        description: parsedRequest.data.description,
-        // @ts-ignore
-        requesterId: req.userId,
-        branchId: parsedRequest.data.branchId,
-        semesterId: parsedRequest.data.semesterId,
-        subjectId: parsedRequest.data.subjectId,
-        unitId: parsedRequest.data.unitId,
-        requestType: parsedRequest.data.requestType,
-      },
-    });
-
-    res.send({ newContentRequest });
   } catch (e) {
     console.log(e);
     res.status(500).send({ message: "Something went wrong!" });
