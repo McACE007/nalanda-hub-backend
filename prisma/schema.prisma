@@ -145,17 +145,16 @@ model RelatedVideo {
 
 enum NotificationType {
   NewContentUpdate
+  RequestForContent
   Approval
   Rejected
-  RequestForContent
 }
 
 model Notification {
-  id          Int              @id @default(autoincrement())
-  title       String
-  description String
-  type        NotificationType
-  contentUrl  String
+  id         Int              @id @default(autoincrement())
+  title      String
+  type       NotificationType
+  contentUrl String?
 
   User   User @relation(fields: [userId], references: [id])
   userId Int
