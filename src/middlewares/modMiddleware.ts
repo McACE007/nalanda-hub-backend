@@ -7,8 +7,6 @@ export async function modMiddleware(
   next: NextFunction
 ) {
   // @ts-ignore
-  console.log(req.userRole);
-  // @ts-ignore
   if (req.userRole === USER_ROLE.MOD) {
     next();
   } else {
