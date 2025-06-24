@@ -120,6 +120,30 @@ export async function approveRequest(req: Request, res: Response) {
       }
     }
 
+    const [user, semester, subject, unit] = await Promise.all([
+      prisma.user.findUnique({ where: { id: assignedRequest.requesterId } }),
+      prisma.semester.findUnique({
+        where: { id: assignedRequest.semesterId },
+      }),
+      prisma.subject.findUnique({
+        where: { id: assignedRequest.subjectId },
+      }),
+      prisma.unit.findUnique({ where: { id: assignedRequest.unitId } }),
+    ]);
+
+    if (!user || !semester || !subject || !unit) {
+      res.status(400).json({ message: "Invalid user or academic references." });
+      return;
+    }
+
+    const notification = await prisma.notification.create({
+      data: {
+        userId: user.id,
+        title: `${user.fullName} your request has been approved: Content for ${semester.name} | ${subject.name} | ${unit.name}`,
+        type: "Approved",
+      },
+    });
+
     res.status(200).json({
       success: true,
       message: "Request approved successfully",
@@ -138,6 +162,7 @@ export async function rejectRequest(req: Request, res: Response) {
     // @ts-ignore
     const moderatorId = req.userId;
     const requestId = Number(req.params.requestId);
+    const rejectionReason = req.body.rejectionReason;
 
     if (!requestId) {
       res.send({ success: false, error: "Request Id not given" });
@@ -165,39 +190,39 @@ export async function rejectRequest(req: Request, res: Response) {
       return;
     }
 
-    let updatedAssignedRequest: unknown;
+    const updatedAssignedRequest = await prisma.request.update({
+      where: {
+        id: requestId,
+      },
+      data: {
+        status: "Rejected",
+        rejectionReason: rejectionReason,
+      },
+    });
 
-    switch (assignedRequest.requestType) {
-      case "NewContent":
-      case "UpdateContent": {
-        updatedAssignedRequest = await prisma.request.update({
-          where: {
-            id: requestId,
-          },
-          data: {
-            status: "Rejected",
-          },
-        });
-        break;
-      }
+    const [user, semester, subject, unit] = await Promise.all([
+      prisma.user.findUnique({ where: { id: assignedRequest.requesterId } }),
+      prisma.semester.findUnique({
+        where: { id: assignedRequest.semesterId },
+      }),
+      prisma.subject.findUnique({
+        where: { id: assignedRequest.subjectId },
+      }),
+      prisma.unit.findUnique({ where: { id: assignedRequest.unitId } }),
+    ]);
 
-      case "UploadContent": {
-        updatedAssignedRequest = await prisma.request.update({
-          where: {
-            id: requestId,
-          },
-          data: {
-            status: "Rejected",
-            Content: {
-              update: {
-                status: false,
-              },
-            },
-          },
-        });
-        break;
-      }
+    if (!user || !semester || !subject || !unit) {
+      res.status(400).json({ message: "Invalid user or academic references." });
+      return;
     }
+
+    const notification = await prisma.notification.create({
+      data: {
+        userId: user.id,
+        title: `${user.fullName} your request has been rejected: Content for ${semester.name} | ${subject.name} | ${unit.name}`,
+        type: "Rejected",
+      },
+    });
 
     res.status(200).json({
       success: true,
