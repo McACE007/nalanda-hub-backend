@@ -3,10 +3,16 @@ import userRouter from "./routes/userRouter";
 import authRouter from "./routes/authRouter";
 import modRouter from "./routes/modRouter";
 import contentRouter from "./routes/contentRouter";
+import cors from "cors";
 
 const app = express();
 
 app.use(express.json());
+app.use(
+  cors({
+    origin: "http://127.0.0.1:5173",
+  })
+);
 
 app.use("/api/auth", authRouter);
 app.use("/api/users", userRouter);

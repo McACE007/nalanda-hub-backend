@@ -40,7 +40,16 @@ export async function handleLogin(req: Request, res: Response) {
       JWT_SECRET
     );
 
-    res.send({ message: "Login successful", token });
+    res.send({
+      message: "Login successful",
+      token,
+      user: {
+        id: user.id,
+        fullName: user.fullName,
+        email: user.fullName,
+        role: user.role,
+      },
+    });
   } catch (e) {
     console.log(e);
     res.send({ message: "Something went wrong!" });
@@ -49,44 +58,52 @@ export async function handleLogin(req: Request, res: Response) {
 
 export async function handleRegister(req: Request, res: Response) {
   try {
-    const parsedRequest = RegisterRequest.safeParse(req.body);
+    const { success, error, data } = RegisterRequest.safeParse(req.body);
 
-    if (!parsedRequest.success) {
-      console.log(parsedRequest.error);
-      res.status(411).send({ message: "Invalid input given" });
+    if (!success) {
+      console.error(error);
+      res.status(400).send({ success: false, error });
       return;
     }
 
-    if (parsedRequest.data.password !== parsedRequest.data.confirmPassword) {
-      res.send({ message: "Mismatch password" });
+    if (data.password !== data.confirmPassword) {
+      res.send({ success: false, error: "Passwords did not match" });
       return;
     }
 
     const existingUser = await prisma.user.findUnique({
       where: {
-        email: parsedRequest.data.email,
+        email: data.email,
       },
     });
 
     if (existingUser) {
-      res.send({ message: "Email is already used, Please try different one." });
+      res.status(409).send({
+        success: false,
+        error: "Email is already used, Please try different one.",
+      });
       return;
     }
 
-    const hashedPassword = await bcrypt.hash(parsedRequest.data.password, 10);
+    const hashedPassword = await bcrypt.hash(data.password, 10);
 
     const user = await prisma.user.create({
       data: {
-        email: parsedRequest.data.email,
-        fullName: parsedRequest.data.fullName,
+        email: data.email,
+        fullName: data.fullName,
         password: hashedPassword,
-        branchId: parsedRequest.data.branchId,
+        branchId: data.branchId,
       },
     });
-
-    res.send({ message: "Registered sucessfully" });
+    res
+      .status(201)
+      .send({
+        success: true,
+        message: "Registered sucessfully",
+        userId: user.id,
+      });
   } catch (e) {
-    console.log(e);
-    res.send({ message: "Something went wrong!" });
+    console.error(e);
+    res.status(500).send({ success: false, error: "Failed to register user" });
   }
 }
