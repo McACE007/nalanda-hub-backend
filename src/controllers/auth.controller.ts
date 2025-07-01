@@ -1,37 +1,37 @@
 import { Request, Response } from "express";
-import { LoginRequest, RegisterRequest } from "../types";
 import { prisma } from "../db";
 import jwt from "jsonwebtoken";
-import { JWT_SECRET } from "../config";
+import { JWT_SECRET } from "../constants/global.constants";
 import bcrypt from "bcrypt";
+import { loginUserSchema, registerUserSchema } from "../schemas/user.schema";
 
-export async function handleLogin(req: Request, res: Response) {
+export async function login(req: Request, res: Response) {
   try {
-    const parsedRequest = LoginRequest.safeParse(req.body);
+    const { success, error, data } = loginUserSchema.safeParse(req.body);
 
-    if (!parsedRequest.success) {
-      res.status(411).send({ message: "Invalid input given" });
+    if (!success) {
+      res.status(400).send({ success: false, error });
       return;
     }
 
     const user = await prisma.user.findUnique({
       where: {
-        email: parsedRequest.data.email,
+        email: data.email,
       },
     });
 
     if (!user) {
-      res.send({ message: "Invalid credentials" });
+      res.status(401).send({ success: false, error: "Invalid credentials" });
       return;
     }
 
     const isPasswordCorrect = await bcrypt.compare(
-      parsedRequest.data.password,
+      data.password,
       user.password
     );
 
     if (!isPasswordCorrect) {
-      res.send({ message: "Invalid credentials" });
+      res.status(401).send({ success: false, error: "Invalid credentials" });
       return;
     }
 
@@ -41,6 +41,7 @@ export async function handleLogin(req: Request, res: Response) {
     );
 
     res.send({
+      success: true,
       message: "Login successful",
       token,
       user: {
@@ -51,14 +52,14 @@ export async function handleLogin(req: Request, res: Response) {
       },
     });
   } catch (e) {
-    console.log(e);
-    res.send({ message: "Something went wrong!" });
+    console.error(e);
+    res.status(500).send({ success: false, error: "Falied to login user" });
   }
 }
 
-export async function handleRegister(req: Request, res: Response) {
+export async function register(req: Request, res: Response) {
   try {
-    const { success, error, data } = RegisterRequest.safeParse(req.body);
+    const { success, error, data } = registerUserSchema.safeParse(req.body);
 
     if (!success) {
       console.error(error);
@@ -95,13 +96,11 @@ export async function handleRegister(req: Request, res: Response) {
         branchId: data.branchId,
       },
     });
-    res
-      .status(201)
-      .send({
-        success: true,
-        message: "Registered sucessfully",
-        userId: user.id,
-      });
+    res.status(201).send({
+      success: true,
+      message: "Registered sucessfully",
+      userId: user.id,
+    });
   } catch (e) {
     console.error(e);
     res.status(500).send({ success: false, error: "Failed to register user" });

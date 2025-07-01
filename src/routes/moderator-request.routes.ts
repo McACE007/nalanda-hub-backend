@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { authMiddleware } from "../middlewares/authMiddleware";
-import { modMiddleware } from "../middlewares/modMiddleware";
+import { authMiddleware } from "../middlewares/auth.middleware";
+import { modMiddleware } from "../middlewares/role.middleware";
 import {
   approveRequest,
   getAllAssignedRequests,
   getAssignedRequest,
   rejectRequest,
-} from "../handlers/modHandler";
+} from "../controllers/moderator-request.controller";
 
 const router = Router();
 

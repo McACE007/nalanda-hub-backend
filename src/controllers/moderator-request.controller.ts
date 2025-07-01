@@ -1,10 +1,13 @@
 import { Request, response, Response } from "express";
 import { prisma } from "../db";
+import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 
-export async function getAllAssignedRequests(req: Request, res: Response) {
+export async function getAllAssignedRequests(
+  req: AuthenticatedRequest,
+  res: Response
+) {
   try {
-    // @ts-ignore
-    const moderatorId = req.userId;
+    const moderatorId = req.user?.id;
 
     const assignedRequests = await prisma.request.findMany({
       where: {
@@ -12,19 +15,21 @@ export async function getAllAssignedRequests(req: Request, res: Response) {
       },
     });
 
-    res.send({ assignedRequests });
+    res.status(200).send({ success: true, assignedRequests });
   } catch (error) {
     console.error(error);
     res
       .status(500)
-      .send({ success: false, error: "Failed to get all assigned requests" });
+      .send({ success: false, error: "Failed to fetch all assigned requests" });
   }
 }
 
-export async function getAssignedRequest(req: Request, res: Response) {
+export async function getAssignedRequest(
+  req: AuthenticatedRequest,
+  res: Response
+) {
   try {
-    // @ts-ignore
-    const moderatorId = req.userId;
+    const moderatorId = req.user?.id;
     const requestId = Number(req.params.requestId);
 
     if (!requestId) {
@@ -54,10 +59,9 @@ export async function getAssignedRequest(req: Request, res: Response) {
   }
 }
 
-export async function approveRequest(req: Request, res: Response) {
+export async function approveRequest(req: AuthenticatedRequest, res: Response) {
   try {
-    // @ts-ignore
-    const moderatorId = req.userId;
+    const moderatorId = req.user?.id;
     const requestId = Number(req.params.requestId);
 
     if (!requestId) {
@@ -132,7 +136,10 @@ export async function approveRequest(req: Request, res: Response) {
     ]);
 
     if (!user || !semester || !subject || !unit) {
-      res.status(400).json({ message: "Invalid user or academic references." });
+      res.status(404).json({
+        success: false,
+        error: "Invalid user or academic references.",
+      });
       return;
     }
 
@@ -157,10 +164,9 @@ export async function approveRequest(req: Request, res: Response) {
   }
 }
 
-export async function rejectRequest(req: Request, res: Response) {
+export async function rejectRequest(req: AuthenticatedRequest, res: Response) {
   try {
-    // @ts-ignore
-    const moderatorId = req.userId;
+    const moderatorId = req.user?.id;
     const requestId = Number(req.params.requestId);
     const rejectionReason = req.body.rejectionReason;
 
@@ -212,7 +218,10 @@ export async function rejectRequest(req: Request, res: Response) {
     ]);
 
     if (!user || !semester || !subject || !unit) {
-      res.status(400).json({ message: "Invalid user or academic references." });
+      res.status(404).json({
+        success: false,
+        error: "Invalid user or academic references.",
+      });
       return;
     }
 

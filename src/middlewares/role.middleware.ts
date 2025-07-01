@@ -1,15 +1,15 @@
 import { NextFunction, Request, Response } from "express";
 import { USER_ROLE } from "../generated/prisma";
+import { AuthenticatedRequest } from "./auth.middleware";
 
 export async function modMiddleware(
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) {
-  // @ts-ignore
-  if (req.userRole === USER_ROLE.MOD) {
+  if (req.user?.role === USER_ROLE.MOD) {
     next();
   } else {
-    res.send("Not Authorized, you have to be a mod");
+    res.status(403).send({ success: false, error: "Not authorized" });
   }
 }

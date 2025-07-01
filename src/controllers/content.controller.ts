@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../db";
 
-export async function getContent(req: Request, res: Response) {
+export async function getContentById(req: Request, res: Response) {
   try {
     const contentId = Number(req.params.contentId);
 
