@@ -36,10 +36,25 @@ export async function getContentById(req: Request, res: Response) {
 
 export async function getALlContents(req: Request, res: Response) {
   try {
+    const search = req.query.search || "";
+    const sortBy = req.query.sortBy || "";
+
+    const orderByMap: { [key: string]: any } = {
+      newest: { uploadedDate: "desc" },
+      oldest: { uploadedDate: "asc" },
+      "a-z": { title: "asc" },
+      "z-a": { title: "desc" },
+    };
+
     const contents = await prisma.content.findMany({
       where: {
         status: true,
+        title: {
+          contains: search as string,
+          mode: "insensitive",
+        },
       },
+      orderBy: orderByMap[sortBy as string] || "",
     });
 
     res.status(200).json({
