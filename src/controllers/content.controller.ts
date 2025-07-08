@@ -38,6 +38,7 @@ export async function getALlContents(req: Request, res: Response) {
   try {
     const search = req.query.search || "";
     const sortBy = req.query.sortBy || "";
+    const semesterId = Number(req.query.semester);
 
     const orderByMap: { [key: string]: any } = {
       newest: { uploadedDate: "desc" },
@@ -46,9 +47,12 @@ export async function getALlContents(req: Request, res: Response) {
       "z-a": { title: "desc" },
     };
 
+    console.log(semesterId, "id");
+
     const contents = await prisma.content.findMany({
       where: {
         status: true,
+        ...(semesterId ? { semesterId } : {}),
         title: {
           contains: search as string,
           mode: "insensitive",
@@ -56,6 +60,8 @@ export async function getALlContents(req: Request, res: Response) {
       },
       orderBy: orderByMap[sortBy as string] || "",
     });
+
+    console.log(contents);
 
     res.status(200).json({
       success: true,
