@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../db";
+import { Prisma } from "../generated/prisma";
 
 export async function getContentById(req: Request, res: Response) {
   try {
@@ -36,32 +37,36 @@ export async function getContentById(req: Request, res: Response) {
 
 export async function getALlContents(req: Request, res: Response) {
   try {
-    const search = req.query.search || "";
-    const sortBy = req.query.sortBy || "";
-    const semesterId = Number(req.query.semester);
+    const search = typeof req.query.search === "string" ? req.query.search : "";
+    const sortBy = typeof req.query.sortBy === "string" ? req.query.sortBy : "";
+    const semesterId = req.query.semester
+      ? Number(req.query.semester)
+      : undefined;
+    const subjectId = req.query.subject ? Number(req.query.subject) : undefined;
+    const unitId = req.query.unit ? Number(req.query.unit) : undefined;
 
-    const orderByMap: { [key: string]: any } = {
+    const orderByMap: {
+      [key: string]: Prisma.ContentOrderByWithRelationInput;
+    } = {
       newest: { uploadedDate: "desc" },
       oldest: { uploadedDate: "asc" },
       "a-z": { title: "asc" },
       "z-a": { title: "desc" },
     };
 
-    console.log(semesterId, "id");
-
     const contents = await prisma.content.findMany({
       where: {
         status: true,
-        ...(semesterId ? { semesterId } : {}),
+        semesterId,
+        unitId,
+        subjectId,
         title: {
           contains: search as string,
           mode: "insensitive",
         },
       },
-      orderBy: orderByMap[sortBy as string] || "",
+      orderBy: orderByMap[sortBy],
     });
-
-    console.log(contents);
 
     res.status(200).json({
       success: true,
