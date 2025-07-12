@@ -4,7 +4,10 @@ import { Response } from "express";
 
 export async function fetchAllUnits(req: AuthenticatedRequest, res: Response) {
   try {
-    const subjectId = Number(req.query.subject) || undefined;
+    const subjectId =
+      typeof req.query.subject === "string" && req.query.subject !== "all"
+        ? Number(req.query.subject)
+        : undefined;
     const units = await prisma.unit.findMany({
       where: {
         subjectId,

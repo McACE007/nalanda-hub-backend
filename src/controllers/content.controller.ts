@@ -39,11 +39,22 @@ export async function getALlContents(req: Request, res: Response) {
   try {
     const search = typeof req.query.search === "string" ? req.query.search : "";
     const sortBy = typeof req.query.sortBy === "string" ? req.query.sortBy : "";
-    const semesterId = req.query.semester
-      ? Number(req.query.semester)
-      : undefined;
-    const subjectId = req.query.subject ? Number(req.query.subject) : undefined;
-    const unitId = req.query.unit ? Number(req.query.unit) : undefined;
+    const semesterId =
+      typeof req.query.semester === "string" && req.query.semester !== "all"
+        ? Number(req.query.semester)
+        : undefined;
+    const subjectId =
+      typeof req.query.subject === "string" && req.query.subject !== "all"
+        ? Number(req.query.subject)
+        : undefined;
+    const unitId =
+      typeof req.query.unit === "string" && req.query.unit !== "all"
+        ? Number(req.query.unit)
+        : undefined;
+    const pageNumber =
+      typeof req.query.page === "string" ? Number(req.query.page) : 1;
+    const limit =
+      typeof req.query.perPage === "string" ? Number(req.query.perPage) : 30;
 
     const orderByMap: {
       [key: string]: Prisma.ContentOrderByWithRelationInput;
@@ -54,24 +65,49 @@ export async function getALlContents(req: Request, res: Response) {
       "z-a": { title: "desc" },
     };
 
-    const contents = await prisma.content.findMany({
-      where: {
-        status: true,
-        semesterId,
-        unitId,
-        subjectId,
-        title: {
-          contains: search as string,
-          mode: "insensitive",
-        },
+    const where: Prisma.ContentWhereInput = {
+      status: true,
+      semesterId,
+      subjectId,
+      unitId,
+      title: {
+        contains: search,
+        mode: "insensitive",
       },
-      orderBy: orderByMap[sortBy],
-    });
+    };
+
+    const [contents, totalItems] = await Promise.all([
+      prisma.content.findMany({
+        where,
+        orderBy: orderByMap[sortBy],
+        take: limit,
+        skip: (pageNumber - 1) * limit,
+        include: {
+          uploader: {
+            select: {
+              fullName: true,
+            },
+          },
+        },
+      }),
+      prisma.content.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasMore = pageNumber < totalPages;
 
     res.status(200).json({
       success: true,
-      contents,
-      message: "Fetched all contents successfully",
+      data: contents,
+      meta: {
+        currentPage: pageNumber,
+        nextPage: hasMore ? pageNumber + 1 : null,
+        prevPage: pageNumber > 1 ? pageNumber - 1 : null,
+        totalItems,
+        totalPages,
+        hasMore,
+        pageSize: limit,
+      },
     });
   } catch (error) {
     console.error(error);
