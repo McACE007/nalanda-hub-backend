@@ -8,7 +8,9 @@ export async function fetchAllSubjects(
 ) {
   try {
     const semesterId =
-      typeof req.query.semester === "string" && req.query.semester !== "all"
+      typeof req.query.semester === "string" &&
+      req.query.semester !== "all" &&
+      req.query.semester !== ""
         ? Number(req.query.semester)
         : undefined;
     const subjects = await prisma.subject.findMany({

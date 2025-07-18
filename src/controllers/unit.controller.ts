@@ -5,7 +5,9 @@ import { Response } from "express";
 export async function fetchAllUnits(req: AuthenticatedRequest, res: Response) {
   try {
     const subjectId =
-      typeof req.query.subject === "string" && req.query.subject !== "all"
+      typeof req.query.subject === "string" &&
+      req.query.subject !== "all" &&
+      req.query.subject !== ""
         ? Number(req.query.subject)
         : undefined;
     const units = await prisma.unit.findMany({

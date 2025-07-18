@@ -40,15 +40,21 @@ export async function getALlContents(req: Request, res: Response) {
     const search = typeof req.query.search === "string" ? req.query.search : "";
     const sortBy = typeof req.query.sortBy === "string" ? req.query.sortBy : "";
     const semesterId =
-      typeof req.query.semester === "string" && req.query.semester !== "all"
+      typeof req.query.semester === "string" &&
+      req.query.semester !== "all" &&
+      req.query.semester !== ""
         ? Number(req.query.semester)
         : undefined;
     const subjectId =
-      typeof req.query.subject === "string" && req.query.subject !== "all"
+      typeof req.query.subject === "string" &&
+      req.query.subject !== "all" &&
+      req.query.subject !== ""
         ? Number(req.query.subject)
         : undefined;
     const unitId =
-      typeof req.query.unit === "string" && req.query.unit !== "all"
+      typeof req.query.unit === "string" &&
+      req.query.unit !== "all" &&
+      req.query.unit !== ""
         ? Number(req.query.unit)
         : undefined;
     const pageNumber =
