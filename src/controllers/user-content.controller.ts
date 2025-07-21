@@ -2,6 +2,8 @@ import { Response } from "express";
 import { prisma } from "../db";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import { createNewContentSchema } from "../schemas/content.schema";
+import { FileType } from "../generated/prisma";
+import { generatePdfThumbnail } from "../utils/generatePdfThumbnail";
 
 export async function getMyContentById(
   req: AuthenticatedRequest,
@@ -42,7 +44,7 @@ export async function getAllMyContents(
       },
     });
 
-    res.send({ success: false, contents });
+    res.send({ success: true, contents });
   } catch (e) {
     console.error(e);
     res
@@ -58,6 +60,15 @@ export async function createNewContent(
   try {
     const { success, error, data } = createNewContentSchema.safeParse(req.body);
 
+    const file = req.file;
+
+    if (!file) {
+      res.status(400).json({ success: false, error: "File not found" });
+      return;
+    }
+
+    const thumbnailPath = await generatePdfThumbnail(file.filename, file.path);
+
     if (!success) {
       res.status(400).send({ success, error });
       return;
@@ -65,9 +76,9 @@ export async function createNewContent(
 
     const content = await prisma.content.create({
       data: {
-        title: data.title,
-        description: data.description,
-        imageUrl: "",
+        title: "Intro to something something",
+        description: "",
+        imageUrl: thumbnailPath,
         uploadedBy: req.user?.id!,
         status: false,
         branchId: data.branchId,
@@ -77,9 +88,23 @@ export async function createNewContent(
       },
     });
 
+    const newFile = await prisma.file.create({
+      data: {
+        name: file.filename,
+        url: file.path,
+        size: file.size,
+        type: FileType.pdf,
+        content: {
+          connect: {
+            id: content.id,
+          },
+        },
+      },
+    });
+
     res.status(200).send({
       success: true,
-      content,
+      // content,
       message: "Created new content successfully",
     });
   } catch (e) {

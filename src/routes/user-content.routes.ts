@@ -5,11 +5,12 @@ import {
   getAllMyContents,
   getMyContentById,
 } from "../controllers/user-content.controller";
+import { upload } from "../config/multerConfig";
 
 const router = Router();
 
-router.post("/contents", authMiddleware, createNewContent);
-router.get("/contents", authMiddleware, getAllMyContents);
-router.get("/contents/:contentId", authMiddleware, getMyContentById);
+router.post("/", authMiddleware, upload.single("files"), createNewContent);
+router.get("/", authMiddleware, getAllMyContents);
+router.get("/:contentId", authMiddleware, getMyContentById);
 
 export default router;
