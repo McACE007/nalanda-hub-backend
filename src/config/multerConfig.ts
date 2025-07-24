@@ -1,16 +1,15 @@
-import path from "path";
-import fs from "fs";
 import multer from "multer";
+import multerS3 from "multer-s3";
+import { s3 } from "./s3Config";
 
-const uploadDir = path.join(__dirname, "../../uploads");
-
-const storage = multer.diskStorage({
-  destination: (req, file, callback) => {
-    callback(null, uploadDir);
-  },
-  filename: (req, file, callback) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    callback(null, uniqueSuffix + "-" + file.originalname);
+const storage = multerS3({
+  s3,
+  acl: "public-read",
+  bucket: "nalanda-hub",
+  contentType: multerS3.AUTO_CONTENT_TYPE,
+  key: function (req, file, cb) {
+    const filename = `${Date.now()}-${file.originalname}`;
+    cb(null, `uploads/${filename}`);
   },
 });
 
