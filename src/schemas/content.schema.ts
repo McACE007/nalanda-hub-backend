@@ -9,3 +9,10 @@ export const createNewContentSchema = z.object({
   unitId: z.coerce.number(),
   // relatedVideos: z.array(z.string()),
 });
+
+export const updateContentSchema = z.object({
+  branchId: z.coerce.number(),
+  semesterId: z.coerce.number(),
+  subjectId: z.coerce.number(),
+  unitId: z.coerce.number(),
+});
