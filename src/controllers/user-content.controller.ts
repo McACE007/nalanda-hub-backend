@@ -1,12 +1,10 @@
 import { Response } from "express";
 import { prisma } from "../db";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
-import {
-  createNewContentSchema,
-  updateContentSchema,
-} from "../schemas/content.schema";
+import { createNewContentSchema } from "../schemas/content.schema";
 import { FileType } from "../generated/prisma";
 import { generatePdfThumbnailFromS3 } from "../utils/generatePdfThumbnail";
+import { deleteFileFromS3 } from "../utils/deleteFileFromS3";
 
 export async function getMyContentById(
   req: AuthenticatedRequest,
@@ -44,12 +42,28 @@ export async function deleteContent(req: AuthenticatedRequest, res: Response) {
       where: {
         id: contentId,
       },
+      include: {
+        File: true,
+      },
     });
 
     if (!existingContent) {
       res.status(404).json({ success: false, error: "Content not found" });
       return;
     }
+
+    deleteFileFromS3({
+      bucket: "nalanda-hub",
+      key: `uploads/${existingContent.File?.name}`,
+    });
+
+    deleteFileFromS3({
+      bucket: "nalanda-hub",
+      key: `thumbnails/${existingContent.File?.name.slice(
+        0,
+        existingContent.File.name.length - 4
+      )}.1.png`,
+    });
 
     await prisma.file.delete({
       where: {
