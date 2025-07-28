@@ -34,13 +34,41 @@ export async function getAllMyRequests(
   res: Response
 ) {
   try {
+    const pageNumber =
+      typeof req.query.page === "string" ? Number(req.query.page) : 1;
+    const limit =
+      typeof req.query.perPage === "string" ? Number(req.query.perPage) : 6;
+
     const requests = await prisma.request.findMany({
       where: {
         requesterId: req.user?.id,
       },
     });
 
-    res.send({ success: false, requests });
+    const totalItems = await prisma.request.count({
+      where: {
+        requesterId: req.user?.id!,
+      },
+      take: limit,
+      skip: (pageNumber - 1) * limit,
+    });
+
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasMore = pageNumber < totalPages;
+
+    res.send({
+      success: false,
+      data: requests,
+      meta: {
+        currentPage: pageNumber,
+        nextPage: hasMore ? pageNumber + 1 : null,
+        prevPage: pageNumber > 1 ? pageNumber - 1 : null,
+        totalItems,
+        totalPages,
+        hasMore,
+        pageSize: limit,
+      },
+    });
   } catch (e) {
     console.error(e);
     res

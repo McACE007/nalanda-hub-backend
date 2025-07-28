@@ -2,9 +2,10 @@ import { Response } from "express";
 import { prisma } from "../db";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import { createNewContentSchema } from "../schemas/content.schema";
-import { FileType } from "../generated/prisma";
+import { FileType, RequestType } from "../generated/prisma";
 import { generatePdfThumbnailFromS3 } from "../utils/generatePdfThumbnail";
 import { deleteFileFromS3 } from "../utils/deleteFileFromS3";
+import { userInfo } from "os";
 
 export async function getMyContentById(
   req: AuthenticatedRequest,
@@ -194,7 +195,7 @@ export async function createNewContent(
         imageUrl: thumbnailUrl,
         uploadedBy: req.user?.id!,
         status: false,
-        branchId: data.branchId,
+        branchId: req.user?.branchId!,
         semesterId: data.semesterId,
         subjectId: data.subjectId,
         unitId: data.unitId,
@@ -224,6 +225,42 @@ export async function createNewContent(
       },
       include: {
         File: true,
+        Semester: true,
+        Branch: true,
+        Unit: true,
+        Subject: true,
+      },
+    });
+
+    const moderators = await prisma.user.findMany({
+      where: {
+        role: "MOD",
+        branchId: req.user?.branchId!,
+      },
+    });
+
+    const randomIndex = Math.floor(Math.random() * moderators.length);
+    const moderatorId = moderators[randomIndex].id;
+
+    const request = await prisma.request.create({
+      data: {
+        branchId: content.branchId,
+        semesterId: content.semesterId,
+        subjectId: content.subjectId,
+        unitId: content.unitId,
+        contentId: content.id,
+        requestType: "NewContent",
+        requesterId: req.user?.id!,
+        moderatorId,
+        title: `${updatedContent.Branch.name} | ${updatedContent.Semester.name} | ${updatedContent.Subject.name} | ${updatedContent.Unit.name}`,
+      },
+    });
+
+    const notification = await prisma.notification.create({
+      data: {
+        userId: moderatorId,
+        type: "NewContentUpdate",
+        title: `${req.user?.fullName!} uploaded content for: ${request.title}`,
       },
     });
 
