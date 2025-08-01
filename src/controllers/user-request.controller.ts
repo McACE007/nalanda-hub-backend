@@ -84,6 +84,8 @@ export async function createNewRequest(
   try {
     const { success, error, data } = createNewRequestSchema.safeParse(req.body);
 
+    console.table(req.body);
+
     if (!success) {
       res.status(400).send({ success, error });
       return;
@@ -99,142 +101,45 @@ export async function createNewRequest(
     const randomIndex = Math.floor(Math.random() * moderators.length);
     const moderatorId = moderators[randomIndex].id;
 
-    switch (data.requestType) {
-      case RequestType.NewContent: {
-        const request = await prisma.request.create({
-          data: {
-            title: data.title,
-            description: data.description,
-            requestType: data.requestType,
-            branchId: data.branchId,
-            semesterId: data.semesterId,
-            subjectId: data.subjectId,
-            unitId: data.unitId,
-            requesterId: req.user?.id!,
-            moderatorId: moderatorId,
-          },
-        });
+    const [user, semester, subject, unit] = await Promise.all([
+      prisma.user.findUnique({ where: { id: req.user?.id } }),
+      prisma.semester.findUnique({
+        where: { id: data.semesterId },
+      }),
+      prisma.subject.findUnique({
+        where: { id: data.subjectId },
+      }),
+      prisma.unit.findUnique({ where: { id: data.unitId } }),
+    ]);
 
-        const [user, semester, subject, unit] = await Promise.all([
-          prisma.user.findUnique({ where: { id: req.user?.id } }),
-          prisma.semester.findUnique({
-            where: { id: data.semesterId },
-          }),
-          prisma.subject.findUnique({
-            where: { id: data.subjectId },
-          }),
-          prisma.unit.findUnique({ where: { id: data.unitId } }),
-        ]);
-
-        if (!user || !semester || !subject || !unit) {
-          res.status(400).json({
-            success: false,
-            error: "Invalid user or academic references.",
-          });
-          return;
-        }
-
-        const notification = await prisma.notification.create({
-          data: {
-            userId: moderatorId,
-            title: `${user.fullName} requested: Content for ${semester.name} | ${subject.name} | ${unit.name}`,
-            type: "RequestForContent",
-          },
-        });
-
-        break;
-      }
-      case RequestType.UpdateContent: {
-        const request = await prisma.request.create({
-          data: {
-            title: data.title,
-            description: data.description,
-            requestType: data.requestType,
-            branchId: data.branchId,
-            semesterId: data.semesterId,
-            subjectId: data.subjectId,
-            unitId: data.unitId,
-            requesterId: req.user?.id!,
-            moderatorId: moderatorId,
-          },
-        });
-
-        const [user, semester, subject, unit] = await Promise.all([
-          prisma.user.findUnique({ where: { id: req.user?.id } }),
-          prisma.semester.findUnique({
-            where: { id: data.semesterId },
-          }),
-          prisma.subject.findUnique({
-            where: { id: data.subjectId },
-          }),
-          prisma.unit.findUnique({ where: { id: data.unitId } }),
-        ]);
-
-        if (!user || !semester || !subject || !unit) {
-          res.status(400).json({
-            success: false,
-            error: "Invalid user or academic references.",
-          });
-          return;
-        }
-
-        const notification = await prisma.notification.create({
-          data: {
-            userId: moderatorId,
-            title: `${user.fullName} requested update: Content for ${semester.name} | ${subject.name} | ${unit.name}`,
-            type: "RequestForContent",
-          },
-        });
-
-        break;
-      }
-      case RequestType.UploadContent: {
-        const request = await prisma.request.create({
-          data: {
-            title: data.title,
-            description: data.description,
-            requestType: data.requestType,
-            branchId: data.branchId,
-            semesterId: data.semesterId,
-            subjectId: data.subjectId,
-            unitId: data.unitId,
-            contentId: data.contentId,
-            requesterId: req.user?.id!,
-            moderatorId: moderatorId,
-          },
-        });
-
-        const [user, semester, subject, unit] = await Promise.all([
-          prisma.user.findUnique({ where: { id: req.user?.id } }),
-          prisma.semester.findUnique({
-            where: { id: data.semesterId },
-          }),
-          prisma.subject.findUnique({
-            where: { id: data.subjectId },
-          }),
-          prisma.unit.findUnique({ where: { id: data.unitId } }),
-        ]);
-
-        if (!user || !semester || !subject || !unit) {
-          res.status(400).json({
-            success: false,
-            error: "Invalid user or academic references.",
-          });
-          return;
-        }
-
-        const notification = await prisma.notification.create({
-          data: {
-            userId: moderatorId,
-            title: `${user.fullName} uploaded: Content for ${semester.name} | ${subject.name} | ${unit.name}`,
-            type: "RequestForContent",
-          },
-        });
-        break;
-      }
-      default:
-        throw new Error();
+    if (!user || !semester || !subject || !unit) {
+      res.status(400).json({
+        success: false,
+        error: "Invalid user or academic references.",
+      });
+      return;
     }
+
+    const request = await prisma.request.create({
+      data: {
+        title: `${semester.name} | ${subject.name} | ${unit.name}`,
+        requestType: data.requestType as RequestType,
+        branchId: data.branchId,
+        semesterId: data.semesterId,
+        subjectId: data.subjectId,
+        unitId: data.unitId,
+        requesterId: req.user?.id!,
+        moderatorId: moderatorId,
+      },
+    });
+
+    const notification = await prisma.notification.create({
+      data: {
+        userId: moderatorId,
+        title: `${user.fullName} requested: Content for ${semester.name} | ${subject.name} | ${unit.name}`,
+        type: "RequestForContent",
+      },
+    });
 
     res
       .status(201)

@@ -55,6 +55,7 @@ export async function login(req: Request, res: Response) {
         fullName: user.fullName,
         email: user.fullName,
         role: user.role,
+        branchId: user.branchId,
       },
     });
   } catch (e) {

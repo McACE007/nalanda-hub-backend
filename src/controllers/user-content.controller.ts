@@ -249,7 +249,7 @@ export async function createNewContent(
         subjectId: content.subjectId,
         unitId: content.unitId,
         contentId: content.id,
-        requestType: "NewContent",
+        requestType: "UploadContent",
         requesterId: req.user?.id!,
         moderatorId,
         title: `${updatedContent.Branch.name} | ${updatedContent.Semester.name} | ${updatedContent.Subject.name} | ${updatedContent.Unit.name}`,

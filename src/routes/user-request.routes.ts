@@ -5,10 +5,11 @@ import {
   getAllMyRequests,
   getMyRequestById,
 } from "../controllers/user-request.controller";
+import { upload } from "../config/multerConfig";
 
 const router = Router();
 
-router.post("/", authMiddleware, createNewRequest);
+router.post("/", authMiddleware, upload.none(), createNewRequest);
 router.get("/", authMiddleware, getAllMyRequests);
 router.get("/:requestId", authMiddleware, getMyRequestById);
 
