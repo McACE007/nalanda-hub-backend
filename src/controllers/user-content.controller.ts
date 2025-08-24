@@ -252,7 +252,7 @@ export async function createNewContent(
         requestType: "UploadContent",
         requesterId: req.user?.id!,
         moderatorId,
-        title: `${updatedContent.Branch.name} | ${updatedContent.Semester.name} | ${updatedContent.Subject.name} | ${updatedContent.Unit.name}`,
+        title: `${updatedContent.Semester.name} | ${updatedContent.Subject.name} | ${updatedContent.Unit.name}`,
       },
     });
 

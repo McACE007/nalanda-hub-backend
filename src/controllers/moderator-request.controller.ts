@@ -7,15 +7,41 @@ export async function getAllAssignedRequests(
   res: Response
 ) {
   try {
+    const pageNumber =
+      typeof req.query.page === "string" ? Number(req.query.page) : 1;
+    const limit =
+      typeof req.query.perPage === "string" ? Number(req.query.perPage) : 6;
+
     const moderatorId = req.user?.id;
+
+    const totalItems = await prisma.request.count({
+      where: { moderatorId },
+    });
 
     const assignedRequests = await prisma.request.findMany({
       where: {
         moderatorId,
       },
+      take: limit,
+      skip: (pageNumber - 1) * limit,
     });
 
-    res.status(200).send({ success: true, assignedRequests });
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasMore = pageNumber < totalPages;
+
+    res.status(200).send({
+      success: true,
+      data: assignedRequests,
+      meta: {
+        currentPage: pageNumber,
+        nextPage: hasMore ? pageNumber + 1 : null,
+        prevPage: pageNumber > 1 ? pageNumber - 1 : null,
+        totalItems,
+        totalPages,
+        hasMore,
+        pageSize: limit,
+      },
+    });
   } catch (error) {
     console.error(error);
     res
