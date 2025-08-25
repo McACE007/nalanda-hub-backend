@@ -22,6 +22,13 @@ export async function getAllAssignedRequests(
       where: {
         moderatorId,
       },
+      include: {
+        User: true,
+        Branch: true,
+        Semester: true,
+        Subject: true,
+        Unit: true,
+      },
       take: limit,
       skip: (pageNumber - 1) * limit,
     });
