@@ -28,6 +28,11 @@ export async function getAllAssignedRequests(
         Semester: true,
         Subject: true,
         Unit: true,
+        Content: {
+          include: {
+            File: true,
+          },
+        },
       },
       take: limit,
       skip: (pageNumber - 1) * limit,
