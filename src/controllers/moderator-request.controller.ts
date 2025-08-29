@@ -162,7 +162,7 @@ export async function approveRequest(req: AuthenticatedRequest, res: Response) {
       }
     }
 
-    const [user, semester, subject, unit] = await Promise.all([
+    const [user, semester, subject, unit, users] = await Promise.all([
       prisma.user.findUnique({ where: { id: assignedRequest.requesterId } }),
       prisma.semester.findUnique({
         where: { id: assignedRequest.semesterId },
@@ -171,6 +171,7 @@ export async function approveRequest(req: AuthenticatedRequest, res: Response) {
         where: { id: assignedRequest.subjectId },
       }),
       prisma.unit.findUnique({ where: { id: assignedRequest.unitId } }),
+      prisma.user.findMany(),
     ]);
 
     if (!user || !semester || !subject || !unit) {
@@ -187,6 +188,16 @@ export async function approveRequest(req: AuthenticatedRequest, res: Response) {
         title: `${user.fullName} your request has been approved: Content for ${semester.name} | ${subject.name} | ${unit.name}`,
         type: "Approved",
       },
+    });
+
+    users.forEach(async (u) => {
+      await prisma.notification.create({
+        data: {
+          userId: u.id,
+          title: `${user.fullName} has uploaded: Content for ${semester.name} | ${subject.name} | ${unit.name}`,
+          type: "NewContentUpdate",
+        },
+      });
     });
 
     res.status(200).json({
