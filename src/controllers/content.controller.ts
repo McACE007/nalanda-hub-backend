@@ -16,6 +16,26 @@ export async function getContentById(req: Request, res: Response) {
       },
     });
 
+    const [uploader, branch, semester, subject, unit] = await Promise.all([
+      prisma.user.findUnique({ where: { id: content?.uploadedBy } }),
+      prisma.branch.findUnique({ where: { id: content?.branchId } }),
+      prisma.semester.findUnique({
+        where: { id: content?.semesterId },
+      }),
+      prisma.subject.findUnique({
+        where: { id: content?.subjectId },
+      }),
+      prisma.unit.findUnique({ where: { id: content?.unitId } }),
+    ]);
+
+    if (!uploader || !semester || !subject || !unit) {
+      res.status(400).json({
+        success: false,
+        error: "Invalid user or academic references.",
+      });
+      return;
+    }
+
     if (!content) {
       res.status(404).json({
         success: false,
@@ -26,7 +46,14 @@ export async function getContentById(req: Request, res: Response) {
 
     res.status(200).json({
       success: true,
-      content,
+      data: {
+        ...content,
+        Uploader: uploader,
+        Branch: branch,
+        Semester: semester,
+        Subject: subject,
+        Unit: unit,
+      },
       message: "Fetched content successfully",
     });
   } catch (error) {
